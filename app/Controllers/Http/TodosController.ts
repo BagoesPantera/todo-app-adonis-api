@@ -3,13 +3,12 @@ import { schema } from '@ioc:Adonis/Core/Validator'
 import Todo from "App/Models/Todo";
 
 export default class TodosController {
-    public async index({ auth, request, response }: HttpContextContract) {
+    public async index({ auth }: HttpContextContract) {
         const user = await auth.authenticate();
         const todos = await Todo.query().where('user_id', user.id);
         return todos;
     }
-
-    public async show({ auth, request, response ,params }: HttpContextContract) {
+    public async show({ auth, response ,params }: HttpContextContract) {
         const user = await auth.authenticate();
         const todo = await Todo.find(params.id);
         if(todo){
@@ -22,6 +21,15 @@ export default class TodosController {
         }
     }
     public async store({ auth, request, response }: HttpContextContract) {
+        const todoSchema = schema.create({
+            title: schema.string(),
+            description: schema.string(),
+        });
+        try {
+            await request.validate({schema: todoSchema})
+        } catch (error) {
+            return response.badRequest(error.messages)
+        }
         const user = await auth.authenticate();
         const todo = new Todo();
         todo.title = request.input('title');
@@ -31,6 +39,15 @@ export default class TodosController {
         return { message: "Success Create Todo!" };
     }
     public async update({ auth, request, response, params }: HttpContextContract) {
+        const todoSchema = schema.create({
+            title: schema.string.optional(),
+            description: schema.string.optional(),
+        });
+        try {
+            await request.validate({schema: todoSchema})
+        } catch (error) {
+            return response.badRequest(error.messages)
+        }
         const user = await auth.authenticate();
         const todo = await Todo.find(params.id);
         if(todo){
@@ -45,7 +62,7 @@ export default class TodosController {
             return response.badRequest({ message: "Todo not found!" });
         }
     }
-    public async destroy({ auth, request, response, params }: HttpContextContract) {
+    public async destroy({ auth, response, params }: HttpContextContract) {
         const user = await auth.authenticate();
         const todo = await Todo.find(params.id);
         if(todo){
